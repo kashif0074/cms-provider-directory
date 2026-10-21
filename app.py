@@ -5,6 +5,8 @@ import requests
 import io
 import csv
 import json
+from search_service import search_web, SearchError
+from email_pipeline import run_provider_pipeline, search_provider_contact_workflow
 
 app = Flask(__name__)
 
@@ -392,6 +394,89 @@ def api_export():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=cms_providers_export.csv"}
     )
+
+
+@app.post("/api/provider-research")
+def provider_research():
+    body = request.get_json(silent=True) or {}
+    name = body.get("name", "")
+    city = body.get("city", "")
+    state = body.get("state", "")
+    specialty = body.get("specialty", "")
+    fields = [name, city, state, specialty]
+    if not all(isinstance(value, str) for value in fields):
+        return jsonify({"error": "Search fields must be strings"}), 400
+    if not name.strip():
+        return jsonify({"error": "Provider name is required"}), 400
+    if any(len(value) > 200 for value in fields):
+        return jsonify({"error": "Search field is too long"}), 400
+    clean_name = name.replace('"', "").strip()
+    query = (
+        f'"{clean_name}" {city} {state} '
+        f'{specialty} email contact'
+    )
+    try:
+        sources = search_web(query)
+        return jsonify({
+            "provider_name": name,
+            "status": (
+                "Sources Found" if sources else "No Sources Found"
+            ),
+            "sources": sources,
+        })
+    except SearchError as error:
+        return jsonify({
+            "status": "Search Incomplete",
+            "error": str(error),
+        }), 502
+
+
+@app.post("/api/provider-email-pipeline")
+def provider_email_pipeline():
+    body = request.get_json(silent=True) or {}
+    name = body.get("name", "").strip()
+    first_name = body.get("first_name", "").strip()
+    last_name = body.get("last_name", "").strip()
+    if not name and not (first_name or last_name):
+        return jsonify({"error": "Provider name is required"}), 400
+    
+    try:
+        result = run_provider_pipeline(body)
+        status_code = 200 if result.get("status") != "Search Incomplete" else 502
+        return jsonify(result), status_code
+    except Exception as error:
+        return jsonify({
+            "status": "Search Incomplete",
+            "error": str(error),
+            "stages_log": [f"Pipeline exception: {str(error)}"]
+        }), 502
+
+
+@app.post("/api/provider-contact-search")
+def provider_contact_search():
+    body = request.get_json(silent=True) or {}
+    name = body.get("name", "").strip()
+    first_name = body.get("first_name", "").strip()
+    last_name = body.get("last_name", "").strip()
+    if not name and not (first_name or last_name):
+        return jsonify({"error": "Provider name is required"}), 400
+
+    try:
+        result = search_provider_contact_workflow(body)
+        return jsonify(result), 200
+    except Exception as error:
+        return jsonify({
+            "provider_name": name,
+            "email_status": "Not Found",
+            "email": None,
+            "associated_hospital_or_clinic": body.get("facility", "") or "Not Specified",
+            "official_website_url": None,
+            "linkedin_url": None,
+            "source_url": None,
+            "evidence_snippet": None,
+            "error": str(error),
+            "stages_log": [f"Search error: {str(error)}"]
+        }), 500
 
 
 if __name__ == "__main__":

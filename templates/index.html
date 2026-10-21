@@ -739,6 +739,171 @@
   }
   .modal-footer button.primary:hover { background: var(--brand-dark); }
 
+  /* Modal Research & Email Pipeline */
+  .modal-research-panel {
+    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+  .research-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .research-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-research {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .btn-research:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+  .btn-research.primary {
+    background: var(--brand);
+    color: #ffffff;
+    border-color: var(--brand);
+  }
+  .btn-research.primary:hover:not(:disabled) {
+    background: var(--brand-dark);
+  }
+  .btn-research:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .research-status {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .sources-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sources-list li {
+    font-size: 12px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+  }
+  .sources-list li a {
+    color: var(--brand-dark);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .sources-list li a:hover {
+    text-decoration: underline;
+  }
+  .email-result-box {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .badge-found { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .badge-org { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
+  .badge-review { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-notfound { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .badge-incomplete { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+  /* 5-Step Contact Card & Results */
+  .contact-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: var(--shadow-xs);
+  }
+  .contact-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .contact-card-header .provider-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .contact-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .contact-cell.full {
+    grid-column: span 2;
+  }
+  .contact-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .contact-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+  .contact-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  .contact-link-btn:hover {
+    color: var(--brand-dark);
+    text-decoration: underline;
+  }
+  .contact-link-btn svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
   @media (max-width: 900px) {
     .container { padding: 16px; }
     .nav-inner { padding: 12px 16px; }
@@ -915,6 +1080,23 @@
       <button class="modal-close" onclick="closeModalDirect()" title="Close">&times;</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
+    <div class="modal-research-panel" id="modalResearchPanel">
+      <div class="research-header">
+        <div>
+          <h4 style="font-size:13.5px;font-weight:700;color:var(--text-primary);margin-bottom:2px;">Online Contact & Email Discovery</h4>
+          <span style="font-size:11.5px;color:var(--text-muted);">5-Step Search: Name → Associated Hospital/Clinic → Official Website → LinkedIn → Results</span>
+        </div>
+        <div class="research-buttons">
+          <button type="button" id="findProviderSourcesBtn" class="btn-research">Find Sources</button>
+          <button type="button" id="findProviderContactBtn" class="btn-research primary">🔍 Search Contact Information</button>
+        </div>
+      </div>
+      <p id="providerResearchStatus" class="research-status"></p>
+      <ul id="providerResearchSources" class="sources-list"></ul>
+      <p id="providerEmailStatus" class="research-status" style="margin-top:4px;"></p>
+      <div id="providerContactResult" style="display:none;"></div>
+      <div id="pipelineLog" style="display:none;"></div>
+    </div>
     <div class="modal-footer">
       <button onclick="copyNPI()">Copy NPI</button>
       <button class="primary" onclick="closeModalDirect()">Done</button>
@@ -1376,6 +1558,19 @@ function openModal(index) {
   const record = state.currentRecords[index];
   if (!record) return;
   selectedModalRecord = record;
+  state.selectedProvider = record;
+
+  // Reset research and contact intelligence UI
+  const resStatus = document.getElementById("providerResearchStatus");
+  if (resStatus) resStatus.textContent = "";
+  const resSources = document.getElementById("providerResearchSources");
+  if (resSources) resSources.replaceChildren();
+  const emailStatus = document.getElementById("providerEmailStatus");
+  if (emailStatus) emailStatus.textContent = "";
+  const contactResult = document.getElementById("providerContactResult");
+  if (contactResult) contactResult.style.display = "none";
+  const pipelineLog = document.getElementById("pipelineLog");
+  if (pipelineLog) pipelineLog.style.display = "none";
 
   const fullName = `${record.provider_first_name || ""} ${record.provider_last_name || ""} ${record.cred || ""}`.trim() || "Provider Profile";
   document.getElementById("m_name").textContent = fullName;
@@ -1478,8 +1673,292 @@ async function initApp() {
     allowCustom: true,
   });
   
-  // NOTE: triggerSearch(1) is NOT called here on initial page load.
-  // Searches are only triggered when the user explicitly clicks the Search button (or presses Enter).
+  bindEvents();
+}
+
+async function researchSelectedProvider() {
+  const record = state.selectedProvider || selectedModalRecord;
+  if (!record) return;
+
+  const basic = record.basic || {};
+  const name = basic.organization_name || [
+    basic.first_name,
+    basic.middle_name,
+    basic.last_name
+  ].filter(Boolean).join(" ") || [
+    record.provider_first_name,
+    record.provider_last_name
+  ].filter(Boolean).join(" ") || record.facility_name || "";
+
+  const address = (record.addresses || []).find(
+    item => item.address_purpose === "LOCATION"
+  ) || {};
+  const taxonomy = (record.taxonomies || []).find(
+    item => item.primary
+  ) || {};
+
+  const city = address.city || record.citytown || "";
+  const stateVal = address.state || record.state || "";
+  const specialty = taxonomy.desc || record.pri_spec || record.sec_spec_all || "";
+
+  const button = document.getElementById("findProviderSourcesBtn");
+  const status = document.getElementById("providerResearchStatus");
+  const list = document.getElementById("providerResearchSources");
+
+  button.disabled = true;
+  list.replaceChildren();
+  status.textContent = "Searching public sources...";
+
+  try {
+    const response = await fetch("/api/provider-research", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        city: city,
+        state: stateVal,
+        specialty: specialty
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Search failed");
+    }
+    status.textContent = data.status;
+
+    for (const source of data.sources || []) {
+      let url;
+      try {
+        url = new URL(source.url);
+      } catch {
+        continue;
+      }
+      if (!["http:", "https:"].includes(url.protocol)) continue;
+
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = url.href;
+      link.textContent = source.title || url.hostname;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      item.appendChild(link);
+      list.appendChild(item);
+    }
+  } catch (error) {
+    status.textContent = `Search Incomplete: ${error.message}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function searchProviderContact() {
+  const record = state.selectedProvider || selectedModalRecord;
+  if (!record) return;
+
+  const basic = record.basic || {};
+  const firstName = basic.first_name || record.provider_first_name || "";
+  const lastName = basic.last_name || record.provider_last_name || "";
+  const name = basic.organization_name || [
+    basic.first_name,
+    basic.middle_name,
+    basic.last_name
+  ].filter(Boolean).join(" ") || [
+    record.provider_first_name,
+    record.provider_last_name
+  ].filter(Boolean).join(" ") || record.facility_name || "";
+
+  const address = (record.addresses || []).find(
+    item => item.address_purpose === "LOCATION"
+  ) || {};
+  const taxonomy = (record.taxonomies || []).find(
+    item => item.primary
+  ) || {};
+
+  const city = address.city || record.citytown || "";
+  const stateVal = address.state || record.state || "";
+  const specialty = taxonomy.desc || record.pri_spec || record.sec_spec_all || "";
+  const facility = record.facility_name || "";
+
+  const contactBtn = document.getElementById("findProviderContactBtn");
+  const emailBtn = document.getElementById("findProviderEmailBtn");
+  const sourcesBtn = document.getElementById("findProviderSourcesBtn");
+  const status = document.getElementById("providerEmailStatus");
+  const resultBox = document.getElementById("providerContactResult");
+  const pipelineLog = document.getElementById("pipelineLog");
+  const sourcesList = document.getElementById("providerResearchSources");
+
+  if (contactBtn) contactBtn.disabled = true;
+  if (emailBtn) emailBtn.disabled = true;
+  if (sourcesBtn) sourcesBtn.disabled = true;
+  if (resultBox) resultBox.style.display = "none";
+  if (pipelineLog) pipelineLog.style.display = "none";
+  if (sourcesList) sourcesList.replaceChildren();
+
+  if (status) {
+    status.textContent = "Executing 5-Step Contact Search: Name → Hospital/Clinic → Official Website → LinkedIn → Results...";
+  }
+
+  try {
+    const response = await fetch("/api/provider-contact-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        first_name: firstName,
+        last_name: lastName,
+        city,
+        state: stateVal,
+        specialty,
+        facility
+      })
+    });
+
+    const data = await response.json();
+    if (status) {
+      status.textContent = `Completed · Status: Email ${data.email_status}`;
+    }
+
+    renderContactResults(data);
+  } catch (error) {
+    if (status) {
+      status.textContent = `Search error: ${error.message}`;
+    }
+  } finally {
+    if (contactBtn) contactBtn.disabled = false;
+    if (emailBtn) emailBtn.disabled = false;
+    if (sourcesBtn) sourcesBtn.disabled = false;
+  }
+}
+
+function renderContactResults(data) {
+  const resultBox = document.getElementById("providerContactResult");
+  const pipelineLog = document.getElementById("pipelineLog");
+  if (!resultBox) return;
+
+  const isFound = data.email_status === "Found";
+  const badgeClass = isFound ? "badge-found" : "badge-notfound";
+
+  let emailValueHtml = "";
+  if (data.email) {
+    emailValueHtml = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 12px;border-radius:6px;">
+        <a href="mailto:${escAttr(data.email)}" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#15803d;text-decoration:none;">${esc(data.email)}</a>
+        <button type="button" onclick="navigator.clipboard.writeText('${escAttr(data.email)}');alert('Copied email: ${escAttr(data.email)}');" style="padding:4px 9px;font-size:11px;font-weight:600;border:1px solid #86efac;background:#ffffff;border-radius:4px;cursor:pointer;color:#166534;">Copy Email</button>
+      </div>
+    `;
+  } else {
+    emailValueHtml = `
+      <div class="contact-val" style="color:var(--text-muted);font-weight:500;">
+        Not Found <span style="font-size:11.5px;color:var(--text-tertiary);">(No unverified or guessed patterns generated)</span>
+      </div>
+    `;
+  }
+
+  let websiteHtml = `<div class="contact-val" style="color:var(--text-muted);font-weight:500;">Not Available</div>`;
+  if (data.official_website_url) {
+    websiteHtml = `
+      <div class="contact-val">
+        <a href="${escAttr(data.official_website_url)}" target="_blank" rel="noopener noreferrer" class="contact-link-btn" title="${escAttr(data.official_website_url)}">
+          <span>${esc(data.official_website_url)}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+      </div>
+    `;
+  }
+
+  let linkedinHtml = `<div class="contact-val" style="color:var(--text-muted);font-weight:500;">Not Available</div>`;
+  if (data.linkedin_url) {
+    linkedinHtml = `
+      <div class="contact-val">
+        <a href="${escAttr(data.linkedin_url)}" target="_blank" rel="noopener noreferrer" class="contact-link-btn" style="color:#0a66c2;" title="${escAttr(data.linkedin_url)}">
+          <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.62 1.62 0 1 0-.01-3.24 1.62 1.62 0 0 0 .01 3.24M7.86 18.5V10.13H5.07v8.37h2.79z"/></svg>
+          <span>${esc(data.linkedin_url)}</span>
+        </a>
+      </div>
+    `;
+  }
+
+  let sourceHtml = `<div class="contact-val" style="color:var(--text-muted);font-weight:500;">—</div>`;
+  if (data.source_url) {
+    sourceHtml = `
+      <div class="contact-val">
+        <a href="${escAttr(data.source_url)}" target="_blank" rel="noopener noreferrer" class="contact-link-btn" title="${escAttr(data.source_url)}">
+          <span>${esc(data.source_url)}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+      </div>
+    `;
+  }
+
+  let evidenceHtml = "";
+  if (data.evidence_snippet) {
+    evidenceHtml = `
+      <div class="contact-cell full" style="margin-top:2px;">
+        <span class="contact-label">Attribution Evidence</span>
+        <div style="font-size:12px;color:var(--text-secondary);background:#f8fafc;border-left:3px solid var(--brand);padding:8px 10px;border-radius:4px;font-style:italic;">
+          "${esc(data.evidence_snippet)}"
+        </div>
+      </div>
+    `;
+  }
+
+  resultBox.innerHTML = `
+    <div class="contact-card">
+      <div class="contact-card-header">
+        <div class="provider-title">${esc(data.provider_name)}</div>
+        <div>
+          <span class="badge ${badgeClass}" style="font-size:12px;font-weight:700;padding:4px 10px;">Email: ${esc(data.email_status)}</span>
+        </div>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-cell full">
+          <span class="contact-label">Email Address</span>
+          ${emailValueHtml}
+        </div>
+        <div class="contact-cell">
+          <span class="contact-label">Associated Hospital / Clinic</span>
+          <div class="contact-val">${esc(data.associated_hospital_or_clinic || "Not Specified")}</div>
+        </div>
+        <div class="contact-cell">
+          <span class="contact-label">Official Website URL</span>
+          ${websiteHtml}
+        </div>
+        <div class="contact-cell">
+          <span class="contact-label">LinkedIn Profile URL</span>
+          ${linkedinHtml}
+        </div>
+        <div class="contact-cell">
+          <span class="contact-label">Source URL (Email Source)</span>
+          ${sourceHtml}
+        </div>
+        ${evidenceHtml}
+      </div>
+    </div>
+  `;
+
+  resultBox.style.display = "block";
+
+  if (pipelineLog && data.stages_log && data.stages_log.length) {
+    pipelineLog.style.display = "block";
+    pipelineLog.innerHTML = `
+      <details style="font-size:11.5px;color:#64748b;margin-top:8px;">
+        <summary style="cursor:pointer;font-weight:600;color:#0284c7;">View 5-Step Execution Trace (${data.stages_log.length} steps)</summary>
+        <pre style="margin-top:6px;background:#0f172a;color:#f8fafc;padding:10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;overflow-x:auto;white-space:pre-wrap;">${esc(data.stages_log.join('\n'))}</pre>
+      </details>
+    `;
+  }
+}
+
+function bindEvents() {
+  document
+    .getElementById("findProviderSourcesBtn")
+    ?.addEventListener("click", researchSelectedProvider);
+  document
+    .getElementById("findProviderContactBtn")
+    ?.addEventListener("click", searchProviderContact);
+  document
+    .getElementById("findProviderEmailBtn")
+    ?.addEventListener("click", searchProviderContact);
 }
 
 // Run on page load
