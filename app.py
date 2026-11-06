@@ -438,13 +438,17 @@ def fetch_cms_data(params_tuples, multi_filters, single_filters, operator, page,
             api_error.response is None or api_error.response.status_code != 403
         ):
             raise
+        if isinstance(api_error, requests.HTTPError):
+            upstream_status = f"CMS datastore returned HTTP {api_error.response.status_code}"
+        else:
+            upstream_status = str(api_error)
         try:
             return _fetch_from_official_csv(
                 multi_filters, single_filters, operator, page, size
             )
         except requests.RequestException as fallback_error:
             raise requests.RequestException(
-                "CMS datastore returned HTTP 403 and the official CSV fallback "
+                f"{upstream_status}; the official CSV fallback "
                 f"failed: {fallback_error}. CMS/Akamai may be blocking this server's network."
             ) from fallback_error
 
