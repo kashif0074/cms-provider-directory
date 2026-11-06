@@ -1136,6 +1136,24 @@ const MS_REGISTRY = {};
 let currentAbortController = null;
 let selectedModalRecord = null;
 
+async function readJsonResponse(response) {
+  const body = await response.text();
+  try {
+    return JSON.parse(body);
+  } catch {
+    const contentType = response.headers.get("content-type") || "unknown content type";
+    const preview = body
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 240);
+    const detail = preview ? `: ${preview}` : "";
+    throw new Error(
+      `HTTP ${response.status} ${response.statusText}: expected JSON, received ${contentType}${detail}`
+    );
+  }
+}
+
 // MultiSelect Factory Component
 function createMultiSelect(containerId, config) {
   const el = document.getElementById(containerId);
@@ -1400,7 +1418,7 @@ async function triggerSearch(page = 1) {
     const res = await fetch("/api/search?" + params.toString(), {
       signal: currentAbortController.signal,
     });
-    const data = await res.json();
+    const data = await readJsonResponse(res);
     const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
 
     loadingOverlay.style.display = "none";
@@ -1632,7 +1650,10 @@ async function initApp() {
   renderTableHeader();
   try {
     const res = await fetch("/api/options");
-    optionsData = await res.json();
+    optionsData = await readJsonResponse(res);
+    if (!res.ok) {
+      throw new Error(optionsData.error || `Options request failed (HTTP ${res.status})`);
+    }
   } catch (e) {
     console.error("Options fetch error:", e);
   }
@@ -1720,7 +1741,7 @@ async function researchSelectedProvider() {
         specialty: specialty
       })
     });
-    const data = await response.json();
+    const data = await readJsonResponse(response);
     if (!response.ok) {
       throw new Error(data.error || "Search failed");
     }
@@ -1813,7 +1834,10 @@ async function searchProviderContact() {
       })
     });
 
-    const data = await response.json();
+    const data = await readJsonResponse(response);
+    if (!response.ok) {
+      throw new Error(data.error || `Contact search failed (HTTP ${response.status})`);
+    }
     if (status) {
       status.textContent = `Completed · Status: Email ${data.email_status}`;
     }

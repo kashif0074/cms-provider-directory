@@ -174,6 +174,11 @@ SESSION.headers.update({"Accept": "application/json"})
 _CACHE = {}
 CACHE_TTL = 600
 
+
+class CMSInvalidResponseError(requests.RequestException):
+    pass
+
+
 CSV_FIELDS = {
     "npi": "NPI",
     "provider_first_name": "Provider First Name",
@@ -275,7 +280,14 @@ def fetch_from_cms(params_tuples):
 
     r = SESSION.get(BASE_URL, params=params_tuples, timeout=30)
     r.raise_for_status()
-    data = r.json()
+    try:
+        data = r.json()
+    except ValueError as error:
+        content_type = r.headers.get("Content-Type", "unknown content type")
+        raise CMSInvalidResponseError(
+            "CMS datastore returned a non-JSON response "
+            f"(HTTP {r.status_code}, {content_type})."
+        ) from error
 
     # Cache successful response
     if len(_CACHE) > 500:
@@ -421,8 +433,10 @@ def _fetch_from_official_csv(multi_filters, single_filters, operator, page, size
 def fetch_cms_data(params_tuples, multi_filters, single_filters, operator, page, size):
     try:
         return fetch_from_cms(params_tuples)
-    except requests.HTTPError as api_error:
-        if api_error.response is None or api_error.response.status_code != 403:
+    except (requests.HTTPError, CMSInvalidResponseError) as api_error:
+        if isinstance(api_error, requests.HTTPError) and (
+            api_error.response is None or api_error.response.status_code != 403
+        ):
             raise
         try:
             return _fetch_from_official_csv(
