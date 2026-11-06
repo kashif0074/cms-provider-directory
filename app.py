@@ -1,16 +1,22 @@
 import time
+import os
+import tempfile
 from functools import lru_cache
 from flask import Flask, render_template, jsonify, request, Response
 import requests
 import io
 import csv
 import json
+from urllib.parse import urlparse
 from search_service import search_web, SearchError
 from email_pipeline import run_provider_pipeline, search_provider_contact_workflow
 
 app = Flask(__name__)
 
 BASE_URL = "https://data.cms.gov/provider-data/api/1/datastore/query/mj5m-pzi6/0"
+DATASET_METADATA_URL = "https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items/mj5m-pzi6"
+CSV_CACHE_PATH = os.path.join(tempfile.gettempdir(), "cms-provider-mj5m-pzi6.csv")
+CSV_CACHE_TTL = 3600
 
 MULTI_FIELDS = [
     "pri_spec", "sec_spec_all", "citytown", "state",
@@ -168,6 +174,22 @@ SESSION.headers.update({"Accept": "application/json"})
 _CACHE = {}
 CACHE_TTL = 600
 
+CSV_FIELDS = {
+    "npi": "NPI",
+    "provider_first_name": "Provider First Name",
+    "provider_last_name": "Provider Last Name",
+    "cred": "Cred",
+    "pri_spec": "pri_spec",
+    "sec_spec_all": "sec_spec_all",
+    "facility_name": "Facility Name",
+    "adr_ln_1": "adr_ln_1",
+    "citytown": "City/Town",
+    "state": "State",
+    "zip_code": "ZIP Code",
+    "telephone_number": "Telephone Number",
+    "telehlth": "Telehlth",
+}
+
 
 def dedupe_key(record):
     return (
@@ -262,6 +284,157 @@ def fetch_from_cms(params_tuples):
     return data
 
 
+def _official_csv_url():
+    response = SESSION.get(DATASET_METADATA_URL, timeout=30)
+    response.raise_for_status()
+    try:
+        metadata = response.json()
+    except ValueError as error:
+        raise requests.RequestException(
+            "CMS returned invalid JSON for the dataset metadata."
+        ) from error
+    distributions = metadata.get("distribution", [])
+    if not isinstance(distributions, list):
+        raise requests.RequestException(
+            "CMS dataset metadata has an invalid distribution list."
+        )
+    for distribution in distributions:
+        if not isinstance(distribution, dict):
+            continue
+        download_url = distribution.get("downloadURL")
+        parsed_url = urlparse(download_url or "")
+        if (
+            parsed_url.scheme == "https"
+            and parsed_url.hostname == "data.cms.gov"
+            and parsed_url.path.startswith("/provider-data/sites/default/files/")
+            and parsed_url.path.lower().endswith(".csv")
+        ):
+            return download_url
+    raise requests.RequestException(
+        "CMS dataset metadata did not include an official CSV download URL."
+    )
+
+
+def _get_official_csv_path():
+    if os.path.isfile(CSV_CACHE_PATH):
+        age = time.time() - os.path.getmtime(CSV_CACHE_PATH)
+        if age < CSV_CACHE_TTL and os.path.getsize(CSV_CACHE_PATH):
+            return CSV_CACHE_PATH
+
+    download_url = _official_csv_url()
+    response = SESSION.get(
+        download_url,
+        headers={"Accept": "text/csv"},
+        stream=True,
+        timeout=(15, 120),
+    )
+    temporary_path = None
+    try:
+        response.raise_for_status()
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            dir=os.path.dirname(CSV_CACHE_PATH),
+            prefix="cms-provider-",
+            suffix=".csv.tmp",
+            delete=False,
+        ) as csv_file:
+            temporary_path = csv_file.name
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    csv_file.write(chunk)
+        if not os.path.getsize(temporary_path):
+            raise requests.RequestException("CMS returned an empty CSV download.")
+        os.replace(temporary_path, CSV_CACHE_PATH)
+        return CSV_CACHE_PATH
+    finally:
+        response.close()
+        if temporary_path and os.path.exists(temporary_path):
+            os.unlink(temporary_path)
+
+
+def _csv_conditions(multi_filters, single_filters, operator):
+    conditions = []
+    for prop, values in multi_filters.items():
+        if len(values) == 1:
+            op = "=" if prop in ("state", "zip_code") else operator
+            conditions.append((prop, values, op))
+        elif values:
+            conditions.append((prop, values, "in"))
+    for prop, value in single_filters.items():
+        if value:
+            op = "=" if prop in ("npi", "telehlth") else operator
+            conditions.append((prop, [value], op))
+    return conditions
+
+
+def _record_matches_conditions(record, conditions):
+    for prop, values, operator in conditions:
+        field_name = CSV_FIELDS.get(prop)
+        if field_name is None:
+            raise requests.RequestException(
+                f"The official CMS CSV does not provide the '{prop}' filter field."
+            )
+        field_value = str(record.get(field_name, "")).strip().upper()
+        if operator == "in":
+            matches = field_value in values
+        elif operator == "=":
+            matches = field_value == values[0]
+        elif operator == "contains":
+            matches = values[0] in field_value
+        else:
+            raise requests.RequestException(
+                f"Unsupported CMS filter operator '{operator}'."
+            )
+        if not matches:
+            return False
+    return True
+
+
+def _fetch_from_official_csv(multi_filters, single_filters, operator, page, size):
+    csv_path = _get_official_csv_path()
+    conditions = _csv_conditions(multi_filters, single_filters, operator)
+    offset = (page - 1) * size
+    results = []
+    count = 0
+
+    with open(csv_path, newline="", encoding="utf-8-sig") as csv_file:
+        reader = csv.DictReader(csv_file)
+        missing_fields = set(CSV_FIELDS.values()) - set(reader.fieldnames or [])
+        if missing_fields:
+            raise requests.RequestException(
+                "The official CMS CSV is missing expected columns: "
+                + ", ".join(sorted(missing_fields))
+            )
+        for record in reader:
+            if not _record_matches_conditions(record, conditions):
+                continue
+            if offset <= count < offset + size:
+                results.append({
+                    field: record.get(csv_field, "")
+                    for field, csv_field in CSV_FIELDS.items()
+                })
+            count += 1
+
+    return {"count": count, "results": results}
+
+
+def fetch_cms_data(params_tuples, multi_filters, single_filters, operator, page, size):
+    try:
+        return fetch_from_cms(params_tuples)
+    except requests.HTTPError as api_error:
+        if api_error.response is None or api_error.response.status_code != 403:
+            raise
+        try:
+            return _fetch_from_official_csv(
+                multi_filters, single_filters, operator, page, size
+            )
+        except requests.RequestException as fallback_error:
+            raise requests.RequestException(
+                "CMS datastore returned HTTP 403 and the official CSV fallback "
+                f"failed: {fallback_error}. CMS/Akamai may be blocking this server's network."
+            ) from fallback_error
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -310,7 +483,9 @@ def api_search():
     params_tuples = build_cms_query_params(multi_filters, single_filters, operator, page, size)
 
     try:
-        data = fetch_from_cms(params_tuples)
+        data = fetch_cms_data(
+            params_tuples, multi_filters, single_filters, operator, page, size
+        )
     except requests.exceptions.Timeout:
         return jsonify({
             "error": "CMS API request timed out. Please try refining your filters.",
@@ -369,7 +544,9 @@ def api_export():
     params_tuples = build_cms_query_params(multi_filters, single_filters, operator, page=1, size=limit)
 
     try:
-        data = fetch_from_cms(params_tuples)
+        data = fetch_cms_data(
+            params_tuples, multi_filters, single_filters, operator, page=1, size=limit
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
